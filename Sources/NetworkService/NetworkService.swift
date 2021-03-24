@@ -9,20 +9,17 @@ import Foundation
 
 public final class NetworkService: NetworkProvider {
     
+    public var defaultHeaders: [String: String]
+    
     private var _successfulStatusCodes = 200..<300
     public var successfulStatusCodes: Range<Int> {
         _successfulStatusCodes
-    }
-
-    private var _defaultHeaders = [String: String]()
-    public var defaultHeaders: [String: String] {
-        _defaultHeaders
     }
     
     public var session: URLSessionProvider = URLSession.shared
 
     public init(defaultHeaders: [String: String] = [:]) {
-        self._defaultHeaders = defaultHeaders
+        self.defaultHeaders = defaultHeaders
     }
 
 }
