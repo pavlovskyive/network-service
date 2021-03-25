@@ -15,7 +15,7 @@ public protocol NetworkProvider {
 
     /// Defualt HTTPHeaders which will be added in every request.
     /// Overriden by per-request headers
-    var defaultHeaders: [String: String] { get set }
+    var defaultHeaders: [String: String] { get }
     
     /// Set acceptable response status codes.
     /// Status codes which are not in specified range considered erroneous.
@@ -42,6 +42,10 @@ public protocol NetworkProvider {
     ///   - completion: response handler.
     func performRequest(for resource: Resource,
                         completion: @escaping (Result<Data, NetworkError>) -> ())
+    
+    func setHeader(_ value: String, forKey key: String)
+    
+    func removeHeader(forKey key: String)
 
 }
 

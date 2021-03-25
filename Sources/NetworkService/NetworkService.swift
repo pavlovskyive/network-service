@@ -9,7 +9,10 @@ import Foundation
 
 public final class NetworkService: NetworkProvider {
     
-    public var defaultHeaders: [String: String]
+    private var _defaultHeaders: [String: String]
+    public var defaultHeaders: [String: String] {
+        _defaultHeaders
+    }
     
     private var _successfulStatusCodes = 200..<300
     public var successfulStatusCodes: Range<Int> {
@@ -19,12 +22,20 @@ public final class NetworkService: NetworkProvider {
     public var session: URLSessionProvider = URLSession.shared
 
     public init(defaultHeaders: [String: String] = [:]) {
-        self.defaultHeaders = defaultHeaders
+        self._defaultHeaders = defaultHeaders
     }
 
 }
 
 public extension NetworkService {
+    
+    func setHeader(_ value: String, forKey key: String) {
+        _defaultHeaders[key] = value
+    }
+    
+    func removeHeader(forKey key: String) {
+        _defaultHeaders.removeValue(forKey: key)
+    }
 
     func setSuccessfulStatusCodes(_ range: Range<Int>) {
 
