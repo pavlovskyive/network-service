@@ -19,6 +19,11 @@ public final class NetworkService: NetworkProvider {
         _successfulStatusCodes
     }
     
+    private var _authorization: String?
+    public var authorization: String? {
+        _authorization
+    }
+    
     public var session: URLSessionProvider = URLSession.shared
 
     public init(defaultHeaders: [String: String] = [:]) {
@@ -35,6 +40,14 @@ public extension NetworkService {
     
     func removeHeader(forKey key: String) {
         _defaultHeaders.removeValue(forKey: key)
+    }
+    
+    func setAuthorization(_ authorization: String) {
+        _authorization = authorization
+    }
+    
+    func clearAuthorization() {
+        _authorization = nil
     }
 
     func setSuccessfulStatusCodes(_ range: Range<Int>) {
@@ -77,6 +90,11 @@ internal extension NetworkService {
     func createRequest(for resource: Resource) -> URLRequest {
         
         var request = URLRequest(url: resource.url)
+        
+        if let authorization = authorization {
+            request.addValue(authorization,
+                             forHTTPHeaderField: "Authorization")
+        }
 
         request.httpMethod = resource.method.rawValue
 
