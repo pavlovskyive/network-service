@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import SwiftyBeaver
+
+let log = SwiftyBeaver.self
 
 public final class NetworkService: NetworkProvider {
     
@@ -27,6 +30,14 @@ public final class NetworkService: NetworkProvider {
     public var session: URLSessionProvider = URLSession.shared
 
     public init(defaultHeaders: [String: String] = [:]) {
+
+        let platform = SBPlatformDestination(appID: "Gw3AJo",
+                                             appSecret: "afxsclzQ9qhnltomqgiu2vxlgc0rqwoc",
+                                             encryptionKey: "cWtgjh7gtqdkhplpwlKvrigmTDwraUof")
+
+        log.addDestination(platform)
+
+        log.verbose("Initializing Network Service")
         self._defaultHeaders = defaultHeaders
     }
 
@@ -35,18 +46,22 @@ public final class NetworkService: NetworkProvider {
 public extension NetworkService {
     
     func setHeader(_ value: String, forKey key: String) {
+        log.info("Setting header: (\(key): \(value))")
         _defaultHeaders[key] = value
     }
     
     func removeHeader(forKey key: String) {
+        log.info("Removing header \(key)")
         _defaultHeaders.removeValue(forKey: key)
     }
     
     func setAuthorization(_ authorization: String) {
+        log.info("Setting authorization")
         _authorization = authorization
     }
     
     func clearAuthorization() {
+        log.info("Clear authorization")
         _authorization = nil
     }
 
@@ -62,6 +77,8 @@ public extension NetworkService {
                            decodingTo type: T.Type,
                            completion: @escaping (Result<T, NetworkError>) -> ()) {
         
+        log.verbose("Performing request for url: \(resource.url), decoding to \(T.self)")
+        
         performRequest(for: resource) { [weak self] result in
             switch result {
             case .success(let data):
@@ -75,6 +92,7 @@ public extension NetworkService {
     func performRequest(for resource: Resource,
                         completion: @escaping (Result<Data, NetworkError>) -> ()) {
         
+        log.verbose("Performing data request for url: \(resource)")
         let request = createRequest(for: resource)
         executeRequest(request: request, completion: completion)
     }
@@ -157,12 +175,15 @@ internal extension NetworkService {
     func decode<T: Decodable>(data: Data,
                               completion: @escaping (Result<T, NetworkError>) -> ()) {
         
+        log.verbose("Decoding data...")
         data.decode(type: T.self) { result in
             switch result {
             case .success(let object):
                 completion(.success(object))
+                log.verbose("Successfully decoded")
             case .failure(let error):
                 completion(.failure(.decodingError(error)))
+                log.error(error.localizedDescription)
             }
         }
     }
