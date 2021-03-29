@@ -7,6 +7,7 @@ final class NetworkServiceTests: XCTestCase {
 
         var nextData: Data?
         var nextError: Error?
+        var nextResponseCode: Int?
         
         func successHttpURLResponse(request: URLRequest) -> URLResponse {
 
@@ -16,9 +17,24 @@ final class NetworkServiceTests: XCTestCase {
                                    headerFields: nil)!
         }
         
-        func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTaskProvider {
+        func failureHttpURLRespose(request: URLRequest) -> URLResponse {
 
-            completionHandler(nextData, successHttpURLResponse(request: request), nextError)
+            return HTTPURLResponse(url: request.url!,
+                                   statusCode: nextResponseCode ?? 401,
+                                   httpVersion: "HTTP/1.1",
+                                   headerFields: nil)!
+        }
+        
+        func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTaskProvider {
+            
+            guard nextResponseCode != nil else {
+                completionHandler(nextData,
+                                  successHttpURLResponse(request: request), nextError)
+                return URLSessionDataTaskMock()
+            }
+
+            completionHandler(nextData,
+                              failureHttpURLRespose(request: request), nextError)
 
             return URLSessionDataTaskMock()
         }
@@ -153,6 +169,51 @@ final class NetworkServiceTests: XCTestCase {
             }
         }
 
+    }
+    
+    func testSetterAndRemovers() {
+        let networkService = NetworkService()
+        
+        networkService.setHeader("value", forKey: "key")
+        XCTAssertTrue(networkService.defaultHeaders.contains(where: {$0 == ("key", "value") }))
+        
+        networkService.setAuthorization("token")
+        XCTAssertTrue(networkService.authorization == "token")
+        
+        networkService.removeHeader(forKey: "key")
+        XCTAssertFalse(networkService.defaultHeaders.contains(where: { $0 == ("key", "value") }))
+        
+        networkService.clearAuthorization()
+        XCTAssertNil(networkService.authorization)
+    }
+    
+    func testErrors() {
+        let networkService = NetworkService()
+        let session = URLSessionMock()
+        networkService.session = URLSessionMock()
+
+        session.nextError = NetworkError.badData
+
+        networkService.performRequest(for: resource) { result in
+            switch result {
+            case .success(_):
+                XCTFail()
+            case .failure(let error):
+                XCTAssertTrue(error.localizedDescription == NetworkError.badData.localizedDescription)
+            }
+        }
+        
+        session.nextError = NetworkError.badStatusCode(401)
+
+        networkService.performRequest(for: resource) { result in
+            switch result {
+            case .success(_):
+                XCTFail()
+            case .failure(let error):
+                XCTAssertNotNil(error)
+            }
+        }
+        
     }
 
     static var allTests = [
